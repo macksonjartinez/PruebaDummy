@@ -1,0 +1,86 @@
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildId)'
+  dockerImageName: 'macksonjartinez/fastapi-bhd'
+
+stages:
+- stage: Tests
+  displayName: 'Run Tests'
+  jobs:
+  - job: SonarQube
+    displayName: 'SonarCloud Analysis'
+    pool:
+      name: default
+    steps:
+    - task: SonarCloudPrepare@1
+      inputs:
+        SonarCloud: 'example-cloud'
+        organization: 'devopslearningjackson'
+        scannerMode: 'CLI'
+        configMode: 'manual'
+        cliProjectKey: 'DevOpsLearningJackson_FastAPI---BHD'
+        cliProjectName: 'FastAPI - BHD'
+        cliSources: '.'
+    
+    - task: SonarCloudAnalyze@1
+      inputs:
+        jdkVersion: 'JAVA_HOME' 
+
+    - task: SonarCloudPublish@1
+      inputs:
+        pollingTimeoutSec: '300'
+        # Fail the build if SonarCloud analysis fails.
+        # If SonarCloud tests fail, this will fail the build as you requested.
+      condition: succeededOrFailed()
+
+
+  - job: PowerShellScripts
+    displayName: 'PowerShell Scripts'
+    pool:
+      name: default
+      demands: Agent.Name -equals JACKSON-PC
+
+    steps:
+    - task: PowerShell@2
+      inputs:
+        filePath: 'powershell-scripts/hello.ps1'
+
+    - task: PowerShell@2
+      inputs:
+        filePath: 'powershell-scripts/dates.ps1'
+
+- stage: Docker
+  displayName: 'Build and Publish Docker Image'
+  dependsOn: Tests
+  jobs:
+  - job: DockerBuild
+    displayName: 'Build and Publish Image'
+    pool:
+      name: default
+    steps:
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'example-hub'
+        command: 'login'
+
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'example-hub'
+        repository: 'macksonjartinez/fastapi-bhd'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        tags: |
+          $(tag)
+
+    - task: CopyFiles@2
+      inputs:
+        SourceFolder: 'environment'  
+        Contents: '**'  
+        TargetFolder: '$(Build.ArtifactStagingDirectory)/environment'  
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/environment'  
+        ArtifactName: 'EnvironmentFiles'

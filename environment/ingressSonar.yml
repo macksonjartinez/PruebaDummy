@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bhdprueba-ingress
+  namespace: sonarqube
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  tls:
+  - hosts:
+    - sonarbhd-prueba.solvextk.com
+    secretName: tls-bhdprueba
+  ingressClassName: nginx
+  rules:
+  - host: sonarbhd-prueba.solvextk.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: sonarqube-sonarqube
+            port:
+              number: 9000

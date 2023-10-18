@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fastapibhd-ingress
+  namespace: bh-server
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  tls:
+  - hosts:
+    - fastapibhd.solvextk.com
+    secretName: tls-fastapibhd01
+  ingressClassName: nginx
+  rules:
+  - host: fastapibhd.solvextk.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: fastapibhd-service
+            port:
+              number: 8000
+  

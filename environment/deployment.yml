@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapibhd
+  namespace: bh-server
+  labels:
+    app: fastapibhd
+spec:
+  selector:
+    matchLabels:
+      app: fastapibhd
+  revisionHistoryLimit: 0
+  template:
+    metadata:
+      labels:
+        app: fastapibhd
+    spec:
+      containers:
+      - name: fastapibhd
+        image: macksonjartinez/fastapi-bhd:70
+        ports:
+        - containerPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapibhd-service
+  namespace: bh-server
+spec:
+  selector:
+    app:  fastapibhd
+  type: ClusterIP
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
